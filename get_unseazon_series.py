@@ -84,6 +84,9 @@ def main():
 
     # Load data
     ds = load_data("Hs*nc")
+    lat, lon = np.round(float(ds.latitude), 2), np.round(float(ds.longitude), 2)
+    lat_str = f"{np.abs(lat)}S" if lat < 0 else f"{lat}N"
+    lon_str = f"{np.abs(lon)}W" if lon < 0 else f"{lon}E"
     X = ds.squeeze(['longitude', 'latitude']).to_dataframe().drop(columns=["latitude", "longitude"])
     datetime = pd.to_datetime(X.index)
 
@@ -128,7 +131,7 @@ def main():
                   deseasonalized_filename, time=W.index)
 
     # Save processed data
-    W.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{datetime[0].year}-{datetime[-1].year}.csv"))
+    W.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{lat_str}_{lon_str}_{datetime[0].year}-{datetime[-1].year}.csv"))
     print(f"Processed data saved to {PROCESSED_DATA_DIR}")
 
 if __name__ == "__main__":
