@@ -128,7 +128,7 @@ def main():
                   deseasonalized_filename, time=W.index)
 
     # Save processed data
-    W.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{datetime[0].year}-{datetime[-1].year}.csv")
+    W.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{datetime[0].year}-{datetime[-1].year}.csv"))
     print(f"Processed data saved to {PROCESSED_DATA_DIR}")
 
 if __name__ == "__main__":
