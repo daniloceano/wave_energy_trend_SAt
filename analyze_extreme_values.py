@@ -1,3 +1,24 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    analyze_extreme_values.py                          :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/12/08 17:14:51 by daniloceano       #+#    #+#              #
+#    Updated: 2023/12/08 17:17:49 by daniloceano      ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+"""
+This module focuses on the analysis of time series data using the Extreme Value Theory, specifically 
+applying the Peak Over Threshold (POT) method with the Generalized Pareto Distribution (GPD). It includes 
+functions for calculating Mean Residual Life (MRL), assessing the stability of GPD parameters, and visualizing 
+these analyses. The module is designed to extract and analyze extremes, identifying appropriate thresholds 
+for extreme values and ensuring the reliability of the GPD model for extrapolation of exceedances. These methods 
+are crucial for understanding extreme events in climate data, as detailed in the associated research article.
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,12 +48,16 @@ ALPHA = 0.05
 # Function Definitions
 def MRL(sample, alpha):
     """
-    Calculate Mean Residual Life (MRL) and Confidence Intervals.
+    Calculate Mean Residual Life (MRL) and Confidence Intervals based on Extreme Value Theory.
+
+    This function is part of the Peak Over Threshold (POT) method, where it calculates the MRL for 
+    different thresholds and identifies the mean excess. If the GPD assumption is correct, the MRL plot 
+    should be linear before becoming unstable due to few high data points, aiding in appropriate threshold selection.
 
     Parameters
     ----------
     sample : array_like
-        The sample data.
+        The sample data, typically representing exceedances over a threshold.
     alpha : float
         Significance level for confidence intervals.
 
@@ -69,7 +94,11 @@ def MRL(sample, alpha):
 
 def get_parameter_stability(ts, thresholds=None, r="24H", extremes_type="high", alpha=None, n_samples=100, progress=False):
     """
-    Generate parameter stability results for given threshold values.
+    Generate parameter stability results for given threshold values in the context of Extreme Value Theory.
+
+    This function assesses the stability of shape and scale parameters for extreme value analysis 
+    across different thresholds. In the POT method, the exceedances above a high threshold are assumed 
+    to follow a GPD, and the stability of GPD parameters is crucial for valid extrapolations.
 
     Parameters
     ----------
@@ -173,6 +202,9 @@ def plot_stability_results(results, axes=None, figsize=(8, 5), alpha=None):
     """
     Plot shape and scale parameter stability using results from parameter stability analysis.
 
+    This function creates a plot to visualize the stability of shape and scale parameters from 
+    extreme value analysis.
+
     Parameters
     ----------
     results : pandas.DataFrame
@@ -242,6 +274,8 @@ def load_time_series(variable):
     """
     Load time series data for the given variable.
 
+    This function loads time series data from a specified CSV file into a pandas DataFrame.
+
     Parameters
     ----------
     variable : str
@@ -260,6 +294,10 @@ def load_time_series(variable):
 def perform_analysis():
     """
     Main analysis function to perform the time series analysis and plotting.
+
+    This function carries out the complete process of extreme value analysis on the time series data. 
+    It involves resampling, autocorrelation analysis, threshold selection, mean residual life plotting, 
+    parameter stability assessment, and model fitting and checking.
     """
     importr("base")
     utils = importr("utils")
@@ -281,7 +319,7 @@ def perform_analysis():
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
 
-    # Import W
+    # Import detrending and deseasonalization functions
     W = load_time_series(VARIABLE)
 
     # constructing the maximum daily normalized deviation time series from the time series W
