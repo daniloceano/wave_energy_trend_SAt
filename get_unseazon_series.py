@@ -1,3 +1,16 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    get_unseazon_series.py                             :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/12/08 15:54:34 by daniloceano       #+#    #+#              #
+#    Updated: 2023/12/08 15:54:39 by daniloceano      ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+
 import xarray as xr
 import pandas as pd
 import numpy as np
