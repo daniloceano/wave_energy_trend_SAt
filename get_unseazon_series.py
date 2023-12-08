@@ -6,10 +6,17 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 15:54:34 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/08 15:54:39 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/08 16:02:57 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
+"""
+This script performs analysis and visualization of time series data, specifically for deseasonalizing
+and detrending a given time series. The script follows methodologies outlined
+in the research article "The increase in intensity and frequency of surface air temperature extremes
+throughout the western South Atlantic coast". It includes functionalities to load data, plot and save
+various types of visualizations, calculate moving statistics, and perform deseasonalization of time series data.
+"""
 
 import xarray as xr
 import pandas as pd
@@ -30,6 +37,12 @@ os.makedirs(FIGS_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 
 def configure_matplotlib():
+    """
+    Configures global settings for Matplotlib visualizations.
+
+    This function sets a default style and customizes various parameters like color cycles,
+    font size, and the visibility of certain axes spines to enhance the visual appeal of plots.
+    """
     plt.style.use('default')
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=[GRAY])
     plt.rcParams.update({'font.size': 12})
@@ -37,11 +50,42 @@ def configure_matplotlib():
     plt.rcParams['axes.spines.top'] = False
 
 def load_data(file_pattern):
+    """
+    Load data from multiple netCDF files matching a given pattern.
+
+    Args:
+        file_pattern (str): A file pattern to match netCDF files, typically with a wildcard character.
+
+    Returns:
+        xarray.Dataset: A dataset containing data from the matched netCDF files. The time variable
+                        is converted to a pandas datetime object for easier manipulation.
+    """
     ds = xr.open_mfdataset(file_pattern)
     ds['time'] = pd.to_datetime(ds.variables["time"])
     return ds
 
 def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, time=None, avg=None, std=None, **kwargs):
+    """
+    Generates and saves a plot based on the given data and plot type.
+
+    This function supports various plot types including histograms, time series, and boxplots.
+    Additional parameters can be passed through kwargs to customize the plots.
+
+    Args:
+        data (numpy.ndarray): The data to be plotted.
+        plot_type (str): Type of the plot (e.g., 'histogram', 'time_series', 'boxplot').
+        title (str): The title of the plot.
+        xlabel (str): The label for the x-axis.
+        ylabel (str): The label for the y-axis.
+        filename (str): The filename to save the plot as.
+        time (numpy.ndarray, optional): Time data for time series plots.
+        avg (numpy.ndarray, optional): Data for the moving average line in time series plots.
+        std (numpy.ndarray, optional): Data for the standard deviation in time series plots.
+        **kwargs: Additional keyword arguments for specific plot customizations.
+
+    Raises:
+        ValueError: If an invalid plot type is specified.
+    """
     plt.figure(figsize=(16, 8))
     
     if plot_type == 'histogram':
@@ -80,9 +124,32 @@ def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, time=None, a
     plt.close()
 
 def calculate_moving_stats(data, window_size):
+    """
+    Calculates moving statistics (mean and standard deviation) for the given data.
+
+    Args:
+        data (pandas.Series): The data series on which to calculate the moving statistics.
+        window_size (int): The size of the moving window.
+
+    Returns:
+        tuple: A tuple containing two pandas.Series for moving average and moving standard deviation.
+    """
     return data.rolling(center=False, window=window_size).mean(), data.rolling(center=False, window=window_size).std()
 
-def deseasonalize_data(data, index):
+def deseasonalize_data(data):
+    """
+    Deseasonalizes the given time series data.
+
+    This function removes the seasonal component of the data, making it more suitable for
+    certain types of statistical analysis.
+
+    Args:
+        data (pandas.Series): The data series to be deseasonalized.
+        index (pandas.Index): The index of the data series.
+
+    Returns:
+        pandas.Series: The deseasonalized data series.
+    """
     W_list = []
     for m in range(1, 13):
         month_values = data[data.index.month == m]
@@ -132,7 +199,7 @@ def main():
                   detrended_filename, time=Z.index)
 
     # Deseazonalizing the time series
-    W = deseasonalize_data(Z, X.index)
+    W = deseasonalize_data(Z)
     W.rename('normalized deviation', inplace=True)
 
     # Plot deseazonalized time series
