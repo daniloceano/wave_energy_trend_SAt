@@ -42,11 +42,11 @@ def create_lag_plots(data, variable):
 def create_lag_plots_with_lags(data, variable, lags):
     plt.close("all")
     fig, axes = plt.subplots(2, 2, figsize=(9, 9), sharex=True, sharey=True, dpi=100)
-    for l, ax in enumerate(axes.flatten()[:4]):
-        lag_plot(data, lag=lags[l], ax=ax, c=GRAY, alpha=0.8)
-        ax.set_title(f"Lag {lags[l]}")
+    for i, ax in enumerate(axes.flatten()[:4]):
+        lag_plot(data, lag=lags[i], ax=ax, c=GRAY, alpha=0.8)
+        ax.set_title(f"Lag {lags[i]}")
         ax.set_xlabel(f"${variable}_i$")
-        ax.set_ylabel(f"${variable}_{{i+{lags[l]}}}$")
+        ax.set_ylabel(f"${variable}_{{i+{lags[i]}}}$")
         x_fit = np.linspace(data.min(), data.max(), len(data))
         y_fit = x_fit
         ax.plot(x_fit, y_fit, color=RED, label="Line $y = x$")
