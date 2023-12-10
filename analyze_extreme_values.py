@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 17:14:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/08 17:17:49 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/10 11:22:10 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -431,6 +431,9 @@ def perform_analysis():
     plt.close("all")
     fig_cdf = thresh_modeling.gpdcdf(W_max_daily["maximum daily normalized deviation"], u0_r[0], "mle", 0.05)
     fig_cdf.savefig(os.path.join(FIGS_DIR, f"gpdcdf_W_max_daily_{VARIABLE}.png"))
+
+    # Export E seires
+    E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"E_exceedances_over_threshold_{VARIABLE}.csv"))
 
 if __name__ == '__main__':
     perform_analysis()
