@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 14:32:58 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 14:38:10 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -141,7 +141,16 @@ def plot_linear_trend(data, filename):
 
     intercept = model.intercept_.item() if isinstance(model.intercept_, np.ndarray) else model.intercept_
 
-    plt.plot(data.index, y_fit, color=RED, label=f"Line $y = {slope:.2f} x + {intercept:.2f}$")
+    # Determine if scientific notation is needed
+    use_sci_notation = abs(slope) < 0.001 or abs(intercept) < 0.001
+
+    # Format the label accordingly
+    if use_sci_notation:
+        label = f"Line $y = {slope:.6f} x + {intercept:.6f}$"
+    else:
+        label = f"Line $y = {slope:.2f} x + {intercept:.2f}$"
+
+    plt.plot(data.index, y_fit, color=RED, label=label)
     plt.legend(loc="best")
     plt.savefig(filename)
     plt.close()
