@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 15:54:34 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 09:56:24 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 12:35:22 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -35,6 +35,8 @@ BLUE = '#0077b6'
 # Ensure directories exist
 os.makedirs(FIGS_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+for subdir in ["X", "Z", "W"]:
+    os.makedirs(os.path.join(FIGS_DIR, f"{subdir}_{VARIABLE}"), exist_ok=True)
 
 def configure_matplotlib():
     """
@@ -64,12 +66,12 @@ def load_data(file_pattern):
     ds['time'] = pd.to_datetime(ds.variables["time"])
     return ds
 
-def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, time=None, avg=None, std=None, **kwargs):
+def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, subdirectory="", time=None, avg=None, std=None, **kwargs):
     """
     Generates and saves a plot based on the given data and plot type.
 
     This function supports various plot types including histograms, time series, and boxplots.
-    Additional parameters can be passed through kwargs to customize the plots.
+    It now includes the functionality to save plots in specific subdirectories based on the data type (e.g., X, Z, W).
 
     Args:
         data (numpy.ndarray): The data to be plotted.
@@ -78,6 +80,8 @@ def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, time=None, a
         xlabel (str): The label for the x-axis.
         ylabel (str): The label for the y-axis.
         filename (str): The filename to save the plot as.
+        subdirectory (str): The subdirectory within the main figures directory where the plot will be saved.
+                            This is used to organize plots by data type (e.g., 'X', 'Z', 'W').
         time (numpy.ndarray, optional): Time data for time series plots.
         avg (numpy.ndarray, optional): Data for the moving average line in time series plots.
         std (numpy.ndarray, optional): Data for the standard deviation in time series plots.
@@ -114,7 +118,7 @@ def plot_and_save(data, plot_type, title, xlabel, ylabel, filename, time=None, a
     else:
         raise ValueError("Invalid plot type specified.")
     
-    filename_path = os.path.join(FIGS_DIR, f"{plot_type}_{filename}.png")
+    filename_path = os.path.join(FIGS_DIR, subdirectory, f"{plot_type}_{filename}.png")
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -177,17 +181,16 @@ def main():
 
     # Compute values for main variable and plot
     data = X[VARIABLE]
-    plot_and_save(data, 'histogram', plot_title, VARIABLE.upper(), "Frequency", filename)
-    plot_and_save(data, 'boxplot', plot_title, "month", VARIABLE.upper(), filename)
-    plot_and_save(data, 'time_series', plot_title, "", VARIABLE.upper(), filename, time=datetime)
+    plot_and_save(data, 'histogram', plot_title, VARIABLE.upper(), "Frequency", filename, subdirectory=f"X_{VARIABLE}")
+    plot_and_save(data, 'boxplot', plot_title, "month", VARIABLE.upper(), filename, subdirectory=f"X_{VARIABLE}")
+    plot_and_save(data, 'time_series', plot_title, "", VARIABLE.upper(), filename, subdirectory=f"X_{VARIABLE}", time=datetime)
     print(f"Basic statistics plots for {VARIABLE} at {lat}, {lon} created")
 
     # Calculate and plot rolling statistics
     moving_avg, moving_std = calculate_moving_stats(X[VARIABLE], 8760)
     filename_rolling = f"rolling_{filename}"
-    plot_and_save(X[VARIABLE], 'time_series', plot_title, "",
-                f"{VARIABLE.upper()} (m)", filename_rolling, 
-                  time=datetime, avg=moving_avg, std=moving_std)
+    plot_and_save(X[VARIABLE], 'time_series', plot_title, "", f"{VARIABLE.upper()} (m)", filename_rolling,  
+                  subdirectory=f"X_{VARIABLE}", time=datetime, avg=moving_avg, std=moving_std)
     print(f"Rolling statistics plots for {VARIABLE} at {lat}, {lon} created")
 
     # Detrending data
@@ -195,10 +198,10 @@ def main():
     Z = Z.dropna()
 
     # Plot detrended data
-    detrended_filename = f"detrended_{filename}"
+    detrended_filename = f"Z_{filename}"
     deseasonalized_title = f"Time Series Detrended by Subtraction of Its Moving Average ($Z$) \n{plot_title}"
     plot_and_save(Z, 'time_series', deseasonalized_title, "Date", f"Translated {VARIABLE.upper()}",
-                  detrended_filename, time=Z.index)
+                detrended_filename, subdirectory=f"Z_{VARIABLE}", time=Z.index)
     print(f"Detrended (Z) plots for {VARIABLE} at {lat}, {lon} created")
 
     # Deseazonalizing the time series
@@ -206,12 +209,12 @@ def main():
     W.rename('normalized deviation', inplace=True)
 
     # Plot deseazonalized time series
-    deseasonalized_filename = f"deseasonalized_{filename}"
+    deseasonalized_filename = f"W_{filename}"
     deseasonalized_title = f"Deseazonalized ($W$) \n{plot_title}"
-    plot_and_save(W, 'histogram', deseasonalized_title, "Normalized Deviations", "Frequency", deseasonalized_filename)
-    plot_and_save(W, 'boxplot', deseasonalized_title, "Month", "Normalized Deviations", deseasonalized_filename)
+    plot_and_save(W, 'histogram', deseasonalized_title, "Normalized Deviations", "Frequency", deseasonalized_filename, subdirectory=f"W_{VARIABLE}")
+    plot_and_save(W, 'boxplot', deseasonalized_title, "Month", "Normalized Deviations", deseasonalized_filename, subdirectory=f"W_{VARIABLE}")
     plot_and_save(W, 'time_series', deseasonalized_title, "Date", "Normalized Deviations",
-                  deseasonalized_filename, time=W.index)
+                  deseasonalized_filename, time=W.index, subdirectory=f"W_{VARIABLE}")
     print(f"Deseasonalized (W) plots for {VARIABLE} at {lat}, {lon} created")
 
     # Save processed data
