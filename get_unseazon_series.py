@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 15:54:34 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 12:35:22 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 12:39:11 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,9 +25,9 @@ import matplotlib.pyplot as plt
 import os
 
 # Configuration
-FIGS_DIR = "./figures/"
-PROCESSED_DATA_DIR = "./processed_data/"
 VARIABLE = "swh"
+FIGS_DIR = "./figures/"
+PROCESSED_DATA_DIR = f"./processed_data_{VARIABLE}/"
 GRAY = '#343a40'
 RED = '#bf0603'
 BLUE = '#0077b6'
