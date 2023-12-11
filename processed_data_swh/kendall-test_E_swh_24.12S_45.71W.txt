@@ -1,0 +1,2 @@
+trend:      decreasing
+p-value:      0.047443
