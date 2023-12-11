@@ -1,8 +1,7 @@
-from get_exceedance_series import load_time_series as load_W
-from peak_over_threshold import read_u0_from_file
+from c_get_exceedance_E_series import load_time_series as load_W
+from d_peak_over_threshold import read_u0_from_file
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from thresholdmodeling import thresh_modeling
