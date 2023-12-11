@@ -1,2 +1,5 @@
 .DS_Store
 *checkpoint.ipynb
+__pycache__/get_exceedance_series.cpython-311.pyc
+__pycache__/get_unseazon_series.cpython-311.pyc
+__pycache__/peak_over_threshold.cpython-311.pyc
