@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 19:46:11 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 19:46:51 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 from scipy.stats import genpareto
 import pymannkendall as mk
-from statsmodels.stats.diagnostic import acorr_ljungbox
 import os
 import sys
 
