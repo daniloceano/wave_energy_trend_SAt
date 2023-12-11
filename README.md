@@ -18,7 +18,7 @@ This project focuses on the analysis of time series data, with a particular emph
   - Conducting the Augmented Dickey-Fuller test to determine the stationarity of the time series.
   - Performing the Ljung–Box Test to evaluate the independence of the time series data.
 
-### Module 3: `analyze_extreme_values.py`
+### Module 3: `get_exceedance_series.py`
 - **Purpose**: Concentrates on identifying an appropriate threshold for Peak Over Threshold (POT) analysis within extreme value theory.
 - **Key Functionalities**:
   - Calculating Mean Residual Life (MRL) to aid in selecting a suitable threshold for extreme value analysis.
