@@ -8,3 +8,13 @@ Critical Value at 5% Level:         -2.861548
 Critical Value at 10% Level:        -2.566774
 dtype: float64
 Conclusion: Reject the null hypothesis (H0). swh is stationary. Continue with the analysis.
+Results of the Augmented Dickey-Fuller Test for swh
+Test Statistic:                    -49.479462
+P-value:                             0.000000
+Number of Lags Used:                89.000000
+Number of Observations Used:    368095.000000
+Critical Value at 1% Level:         -3.430368
+Critical Value at 5% Level:         -2.861548
+Critical Value at 10% Level:        -2.566774
+dtype: float64
+Conclusion: Reject the null hypothesis (H0). swh is stationary. Continue with the analysis.

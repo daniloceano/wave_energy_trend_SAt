@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 17:14:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 10:46:32 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 10:58:52 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -408,7 +408,7 @@ def perform_analysis():
     print(f"Autocorrelation function plot for {VARIABLE} at {lat}, {lon} created")
 
     # Export E seires
-    E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv"))
+    E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"E_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv"))
     print(f"Exported exceedances over the threshold series (E) series for {VARIABLE} at {lat}, {lon} to {PROCESSED_DATA_DIR}")
 
     # performing Ljung-Box Test
