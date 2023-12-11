@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 17:14:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/10 11:22:10 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 10:46:32 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -44,6 +44,10 @@ GRAY = '#343a40'
 RED = '#bf0603'
 BLUE = '#0077b6'
 ALPHA = 0.05
+POINT_LAT = -24.12
+POINT_LON = -45.71
+START_YEAR = "1980"
+END_YEAR = "2022"
 
 # Function Definitions
 def MRL(sample, alpha):
@@ -68,7 +72,7 @@ def MRL(sample, alpha):
     ax : matplotlib.axes.Axes
         The axes object of the plot.
     """
-    step = np.quantile(sample, .995) / 60
+    step = np.quantile(sample.dropna(), .995) / 60
     threshold = np.arange(0, max(sample), step=step)
     z_inverse = norm.ppf(1 - (alpha / 2))
 
@@ -270,7 +274,7 @@ def plot_stability_results(results, axes=None, figsize=(8, 5), alpha=None):
 
     return ax_shape, ax_scale
 
-def load_time_series(variable):
+def load_time_series(variable, lat_str, lon_str, start_year, end_year):
     """
     Load time series data for the given variable.
 
@@ -286,7 +290,7 @@ def load_time_series(variable):
     data : pd.DataFrame
         Loaded time series data.
     """
-    data_file = glob(os.path.join(PROCESSED_DATA_DIR, f"W_{variable}_24.12S_45.71W_1980-2022.csv"))[0]
+    data_file = glob(os.path.join(PROCESSED_DATA_DIR, f"W_{variable}_{lat_str}_{lon_str}_{start_year}-{end_year}.csv"))[0]
     data = pd.read_csv(data_file, index_col=0)
     data.index = pd.to_datetime(data.index)
     return data
@@ -320,17 +324,16 @@ def perform_analysis():
     plt.rcParams['axes.spines.top'] = False
 
     # Import detrending and deseasonalization functions
-    W = load_time_series(VARIABLE)
+    print(f"Performing extreme value analysis for {VARIABLE} at {POINT_LAT}, {POINT_LON}\n")
+    lat, lon = np.round(float(POINT_LAT), 2), np.round(float(POINT_LON), 2)
+    lat_str = f"{np.abs(lat)}S" if lat < 0 else f"{lat}N"
+    lon_str = f"{np.abs(lon)}W" if lon < 0 else f"{lon}E"
+    W = load_time_series(VARIABLE, lat_str, lon_str, START_YEAR, END_YEAR)
+    filename = f"{VARIABLE.upper()}_{lat_str}_{lon_str}"
 
     # constructing the maximum daily normalized deviation time series from the time series W
     W_max_daily = W.resample('D').max()
     W_max_daily = W_max_daily.rename(columns={'normalized deviation': 'maximum daily normalized deviation'})
-
-    # Observação: Nós poderíamos ter construído a série do desvio máximo diário com o método .resample:
-    # W_max_daily = W.resample("24H").max()
-    # Entretanto, o índice seria modificado: disposto dia-a-dia, sem o registro da hora. Isso não é bom para nosso problema, pois
-    # após toda a análise a ser feita, queremos ser capazes de voltar à série temporal original X e ver quais são os valores de
-    # temperatura dos extremos.
 
     lag_acf = acf(W_max_daily, nlags = 192, fft = False)
     plt.close("all")
@@ -342,12 +345,11 @@ def perform_analysis():
     plt.axhline(y = -1.96/np.sqrt(len(W_max_daily)), linestyle="--", color=GRAY)
     plt.axhline(y = 1.96/np.sqrt(len(W_max_daily)), linestyle="--", color=GRAY)
     plt.title("Autocorrelation Function for the Time Series $W_{\mathrm{max\_daily}}$")
-    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_W_max_daily_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_W_max_daily_{filename}.png"))
+    print(f"Autocorrelation function plot for {VARIABLE} at {lat}, {lon} created")
 
     # performing Ljung-Box Test
-    print("Results of the Ljung-Box Test\n")
     lb_test = acorr_ljungbox(W_max_daily, lags=192, boxpierce=False, return_df=True)
-    print(lb_test)
     # Interpretation of Ljung-Box test result
     p_value = lb_test['lb_pvalue']
     plt.close("all")
@@ -357,7 +359,8 @@ def perform_analysis():
     plt.xlabel("Lag")
     plt.ylabel("p-value")
     plt.title("Ljung-Box Test for $W_{\mathrm{max\_daily}}$")
-    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_W_max_daily_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_W_max_daily_{filename}.png"))
+    print(f"Ljung-Box test plot for {VARIABLE} at {lat}, {lon} created")
 
     # chosen threshold
     u0 = W_max_daily.quantile(0.97)['maximum daily normalized deviation']
@@ -365,16 +368,18 @@ def perform_analysis():
     # plotting the mean excess (mean residual life) function with a confidence level of 5%
     plt.close("all")
     fig, ax = MRL(W_max_daily['maximum daily normalized deviation'], 0.05)
-    plt.axvline(W_max_daily.quantile(0.97)['maximum daily normalized deviation'], color=RED, linestyle="--",
+    ax.axvline(W_max_daily.quantile(0.97)['maximum daily normalized deviation'], color=RED, linestyle="--",
                 label=f"Threshold Line $u_{0}$ = q0.97 ({round(u0,2)})")
-    plt.legend(loc = "best")
-    plt.savefig(os.path.join(FIGS_DIR, f"mean_excess_function_W_max_daily_{VARIABLE}.png"))
+    ax.legend(loc = "best")
+    plt.savefig(os.path.join(FIGS_DIR, f"mean_excess_function_W_max_daily_{filename}.png"))
+    print(f"Mean excess function plot for {VARIABLE} at {lat}, {lon} created")
 
     # plotting the shape and modified scale parameters stability with a confidence level of 5%
     plt.close("all")
     results = get_parameter_stability(W_max_daily['maximum daily normalized deviation'], alpha=0.05)
     ax_shape, ax_scale = plot_stability_results(results, alpha=0.05)
-    plt.savefig(os.path.join(FIGS_DIR, f"parameter_stability_plot_W_max_daily_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"parameter_stability_plot_W_max_daily_{filename}.png"))
+    print(f"Parameter stability plot for {VARIABLE} at {lat}, {lon} created")
 
     # plotting the time series W_max_daily and the threshold line
     plt.close("all")
@@ -385,7 +390,8 @@ def perform_analysis():
     plt.ylabel("Normalized Deviations")
     plt.legend(loc = "best")
     plt.title("Time Series $W_{\mathrm{max\_daily}}$ and the Threshold Line")
-    plt.savefig(os.path.join(FIGS_DIR, f"time_series_W_max_daily_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"time_series_W_max_daily_{filename}.png"))
+    print(f"Time series plot for {VARIABLE} at {lat}, {lon} created")
 
     # exceedances over the threshold series
     E = W_max_daily[W_max_daily['maximum daily normalized deviation'] > u0]['maximum daily normalized deviation'] - u0
@@ -398,12 +404,15 @@ def perform_analysis():
     plt.axhline(y = -1.96/np.sqrt(len(E)), linestyle = "--", color = "gray")
     plt.axhline(y = 1.96/np.sqrt(len(E)), linestyle = "--", color = "gray")
     plt.title("Autocorrelation Function for Exceedances Over the Threshold Series $E$")
-    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_E_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_E_{filename}.png"))
+    print(f"Autocorrelation function plot for {VARIABLE} at {lat}, {lon} created")
+
+    # Export E seires
+    E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv"))
+    print(f"Exported exceedances over the threshold series (E) series for {VARIABLE} at {lat}, {lon} to {PROCESSED_DATA_DIR}")
 
     # performing Ljung-Box Test
-    print("Results of the Ljung-Box Test\n")
     lb_test = acorr_ljungbox(E, lags = 192, boxpierce = False, return_df = True)
-    print(lb_test)
     p_value = lb_test['lb_pvalue']
     plt.close("all")
     plt.figure(figsize = (8, 8))
@@ -412,7 +421,8 @@ def perform_analysis():
     plt.xlabel("Lag")
     plt.ylabel("p-value")
     plt.title("Ljung-Box Test for $E$")
-    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_E_{VARIABLE}.png"))
+    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_E_{filename}.png"))
+    print(f"Ljung-Box test plot for {VARIABLE} E-series at {lat}, {lon} created")
 
     # fitting the time series W_max_daily data to a GPD model with the chosen threshold u0
     u0_r = FloatVector([u0])
@@ -422,18 +432,18 @@ def perform_analysis():
     # functions with the chosen threshold u0 and with a confidence level of 5%
     plt.close("all")
     fig_qq = thresh_modeling.qqplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
-    fig_qq.savefig(os.path.join(FIGS_DIR, f"qqplot_W_max_daily_{VARIABLE}.png"))
+    fig_qq.savefig(os.path.join(FIGS_DIR, f"qqplot_W_max_daily_{filename}.png"))
+    print(f"qqplot for {VARIABLE} at {lat}, {lon} created")
 
     plt.close("all")
     fig_pp = thresh_modeling.ppplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
-    fig_pp.savefig(os.path.join(FIGS_DIR, f"ppplot_W_max_daily_{VARIABLE}.png"))
+    fig_pp.savefig(os.path.join(FIGS_DIR, f"ppplot_W_max_daily_{filename}.png"))
+    print(f"ppplot for {VARIABLE} at {lat}, {lon} created")
 
     plt.close("all")
     fig_cdf = thresh_modeling.gpdcdf(W_max_daily["maximum daily normalized deviation"], u0_r[0], "mle", 0.05)
-    fig_cdf.savefig(os.path.join(FIGS_DIR, f"gpdcdf_W_max_daily_{VARIABLE}.png"))
-
-    # Export E seires
-    E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"E_exceedances_over_threshold_{VARIABLE}.csv"))
+    fig_cdf.savefig(os.path.join(FIGS_DIR, f"gpdcdf_W_max_daily_{filename}.png"))
+    print(f"gpdcdf for {VARIABLE} at {lat}, {lon} created")
 
 if __name__ == '__main__':
     perform_analysis()

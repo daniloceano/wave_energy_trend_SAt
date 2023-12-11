@@ -2,6 +2,20 @@ import pymannkendall as mk
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+
+# Constants
+FIGS_DIR = "./figures/"
+PROCESSED_DATA_DIR = "./processed_data/"
+VARIABLE = "swh"
+GRAY = '#343a40'
+RED = '#bf0603'
+BLUE = '#0077b6'
+ALPHA = 0.05
+POINT_LAT = -24.12
+POINT_LON = -45.71
+START_YEAR = "1980"
+END_YEAR = "2022"
 
 # GPD parameters
 xsi = -0.05767 # shape parameter

@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 15:54:34 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/08 16:02:57 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 09:56:24 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -173,46 +173,50 @@ def main():
     # Parameters
     variable_long_name = ds.variables[VARIABLE].attrs["long_name"]
     plot_title = f"{variable_long_name} ({datetime[0].year} to {datetime[-1].year})"
-    filename = VARIABLE.upper()
+    filename = f"{VARIABLE.upper()}_{lat_str}_{lon_str}"
 
     # Compute values for main variable and plot
     data = X[VARIABLE]
     plot_and_save(data, 'histogram', plot_title, VARIABLE.upper(), "Frequency", filename)
     plot_and_save(data, 'boxplot', plot_title, "month", VARIABLE.upper(), filename)
     plot_and_save(data, 'time_series', plot_title, "", VARIABLE.upper(), filename, time=datetime)
+    print(f"Basic statistics plots for {VARIABLE} at {lat}, {lon} created")
 
     # Calculate and plot rolling statistics
     moving_avg, moving_std = calculate_moving_stats(X[VARIABLE], 8760)
-    filename_rolling = f"rolling_{VARIABLE.upper()}"
+    filename_rolling = f"rolling_{filename}"
     plot_and_save(X[VARIABLE], 'time_series', plot_title, "",
                 f"{VARIABLE.upper()} (m)", filename_rolling, 
                   time=datetime, avg=moving_avg, std=moving_std)
+    print(f"Rolling statistics plots for {VARIABLE} at {lat}, {lon} created")
 
     # Detrending data
     Z = X[VARIABLE] - moving_avg
     Z = Z.dropna()
 
     # Plot detrended data
-    detrended_filename = f"detrended_{VARIABLE.upper()}"
+    detrended_filename = f"detrended_{filename}"
     deseasonalized_title = f"Time Series Detrended by Subtraction of Its Moving Average ($Z$) \n{plot_title}"
     plot_and_save(Z, 'time_series', deseasonalized_title, "Date", f"Translated {VARIABLE.upper()}",
                   detrended_filename, time=Z.index)
+    print(f"Detrended (Z) plots for {VARIABLE} at {lat}, {lon} created")
 
     # Deseazonalizing the time series
     W = deseasonalize_data(Z)
     W.rename('normalized deviation', inplace=True)
 
     # Plot deseazonalized time series
-    deseasonalized_filename = f"deseasonalized_{VARIABLE.upper()}"
+    deseasonalized_filename = f"deseasonalized_{filename}"
     deseasonalized_title = f"Deseazonalized ($W$) \n{plot_title}"
     plot_and_save(W, 'histogram', deseasonalized_title, "Normalized Deviations", "Frequency", deseasonalized_filename)
     plot_and_save(W, 'boxplot', deseasonalized_title, "Month", "Normalized Deviations", deseasonalized_filename)
     plot_and_save(W, 'time_series', deseasonalized_title, "Date", "Normalized Deviations",
                   deseasonalized_filename, time=W.index)
+    print(f"Deseasonalized (W) plots for {VARIABLE} at {lat}, {lon} created")
 
     # Save processed data
     W.to_csv(os.path.join(PROCESSED_DATA_DIR, f"W_{VARIABLE}_{lat_str}_{lon_str}_{datetime[0].year}-{datetime[-1].year}.csv"))
-    print(f"Processed data saved to {PROCESSED_DATA_DIR}")
+    print(f"Deseasonalized (W) series saved to {os.path.join(PROCESSED_DATA_DIR, f'W_{VARIABLE}_{lat_str}_{lon_str}_{datetime[0].year}-{datetime[-1].year}.csv')}")
 
 if __name__ == "__main__":
     main()
