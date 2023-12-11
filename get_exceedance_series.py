@@ -1,12 +1,12 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    analyze_extreme_values.py                          :+:      :+:    :+:    #
+#    get_exceedance_series.py                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 17:14:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 10:58:52 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 13:34:45 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,9 +37,10 @@ from rpy2.robjects import FloatVector
 from thresholdmodeling import thresh_modeling
 
 # Constants
-FIGS_DIR = "./figures/"
-PROCESSED_DATA_DIR = "./processed_data/"
 VARIABLE = "swh"
+FIGS_DIR_W = "./figures/W_swh/"
+FIGS_DIR_E = "./figures/W_swh/"
+PROCESSED_DATA_DIR = f"./processed_data_{VARIABLE}/"
 GRAY = '#343a40'
 RED = '#bf0603'
 BLUE = '#0077b6'
@@ -345,8 +346,8 @@ def perform_analysis():
     plt.axhline(y = -1.96/np.sqrt(len(W_max_daily)), linestyle="--", color=GRAY)
     plt.axhline(y = 1.96/np.sqrt(len(W_max_daily)), linestyle="--", color=GRAY)
     plt.title("Autocorrelation Function for the Time Series $W_{\mathrm{max\_daily}}$")
-    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_W_max_daily_{filename}.png"))
-    print(f"Autocorrelation function plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_W, f"autocorrelation_function_W_max_daily_{filename}.png"))
+    print(f"Autocorrelation function plot for {VARIABLE} W_max_daily at {lat}, {lon} created")
 
     # performing Ljung-Box Test
     lb_test = acorr_ljungbox(W_max_daily, lags=192, boxpierce=False, return_df=True)
@@ -359,11 +360,17 @@ def perform_analysis():
     plt.xlabel("Lag")
     plt.ylabel("p-value")
     plt.title("Ljung-Box Test for $W_{\mathrm{max\_daily}}$")
-    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_W_max_daily_{filename}.png"))
-    print(f"Ljung-Box test plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_W, f"lb_test_W_max_daily_{filename}.png"))
+    print(f"Ljung-Box test plot for {VARIABLE} W_max_daily at {lat}, {lon} created")
 
-    # chosen threshold
+    # Chosen threshold
     u0 = W_max_daily.quantile(0.97)['maximum daily normalized deviation']
+    print(f"Using threshold u0 = {u0}")
+    # Export u0 to a text file
+    u0_filename = os.path.join(PROCESSED_DATA_DIR, f"u0_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.txt")
+    with open(u0_filename, 'w') as file:
+        file.write(f"Threshold u0: {u0}\n")
+    print(f"Exported threshold u0 for {VARIABLE} W_max_daily at {lat}, {lon} to {u0_filename}")
 
     # plotting the mean excess (mean residual life) function with a confidence level of 5%
     plt.close("all")
@@ -371,15 +378,15 @@ def perform_analysis():
     ax.axvline(W_max_daily.quantile(0.97)['maximum daily normalized deviation'], color=RED, linestyle="--",
                 label=f"Threshold Line $u_{0}$ = q0.97 ({round(u0,2)})")
     ax.legend(loc = "best")
-    plt.savefig(os.path.join(FIGS_DIR, f"mean_excess_function_W_max_daily_{filename}.png"))
-    print(f"Mean excess function plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_W, f"mean_excess_function_W_max_daily_{filename}.png"))
+    print(f"Mean excess function plot for {VARIABLE} W_max_daily at {lat}, {lon} created")
 
     # plotting the shape and modified scale parameters stability with a confidence level of 5%
     plt.close("all")
     results = get_parameter_stability(W_max_daily['maximum daily normalized deviation'], alpha=0.05)
     ax_shape, ax_scale = plot_stability_results(results, alpha=0.05)
-    plt.savefig(os.path.join(FIGS_DIR, f"parameter_stability_plot_W_max_daily_{filename}.png"))
-    print(f"Parameter stability plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_W, f"parameter_stability_plot_W_max_daily_{filename}.png"))
+    print(f"Parameter stability plot for {VARIABLE} W_max_daily at {lat}, {lon} created")
 
     # plotting the time series W_max_daily and the threshold line
     plt.close("all")
@@ -390,10 +397,31 @@ def perform_analysis():
     plt.ylabel("Normalized Deviations")
     plt.legend(loc = "best")
     plt.title("Time Series $W_{\mathrm{max\_daily}}$ and the Threshold Line")
-    plt.savefig(os.path.join(FIGS_DIR, f"time_series_W_max_daily_{filename}.png"))
-    print(f"Time series plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_W, f"time_series_W_max_daily_{filename}.png"))
+    print(f"Time series plot for {VARIABLE} W_max_daily at {lat}, {lon} created")
 
-    # exceedances over the threshold series
+    # fitting the time series W_max_daily data to a GPD model with the chosen threshold u0
+    u0_r = FloatVector([u0])
+    thresh_modeling.gpdfit(W_max_daily, u0_r[0], "mle")
+
+    # model checking (empirical versus model): plotting quantile-quantile, probability-probability and cumulative-cumulative 
+    # functions with the chosen threshold u0 and with a confidence level of 5%
+    plt.close("all")
+    fig_qq = thresh_modeling.qqplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
+    fig_qq.savefig(os.path.join(FIGS_DIR_W, f"qqplot_W_max_daily_{filename}.png"))
+    print(f"qqplot for {VARIABLE} W_max_daily at {lat}, {lon} created")
+
+    plt.close("all")
+    fig_pp = thresh_modeling.ppplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
+    fig_pp.savefig(os.path.join(FIGS_DIR_W, f"ppplot_W_max_daily_{filename}.png"))
+    print(f"ppplot for {VARIABLE} W_max_daily at {lat}, {lon} created")
+
+    plt.close("all")
+    fig_cdf = thresh_modeling.gpdcdf(W_max_daily["maximum daily normalized deviation"], u0_r[0], "mle", 0.05)
+    fig_cdf.savefig(os.path.join(FIGS_DIR_W, f"gpdcdf_W_max_daily_{filename}.png"))
+    print(f"gpdcdf for {VARIABLE} W_max_daily at {lat}, {lon} created")
+
+    # Exceedances over the threshold series
     E = W_max_daily[W_max_daily['maximum daily normalized deviation'] > u0]['maximum daily normalized deviation'] - u0
     lag_acf = acf(E, nlags = 192, fft = False)
     plt.figure(figsize = (16, 8))
@@ -404,8 +432,8 @@ def perform_analysis():
     plt.axhline(y = -1.96/np.sqrt(len(E)), linestyle = "--", color = "gray")
     plt.axhline(y = 1.96/np.sqrt(len(E)), linestyle = "--", color = "gray")
     plt.title("Autocorrelation Function for Exceedances Over the Threshold Series $E$")
-    plt.savefig(os.path.join(FIGS_DIR, f"autocorrelation_function_E_{filename}.png"))
-    print(f"Autocorrelation function plot for {VARIABLE} at {lat}, {lon} created")
+    plt.savefig(os.path.join(FIGS_DIR_E, f"autocorrelation_function_E_{filename}.png"))
+    print(f"Autocorrelation function plot for {VARIABLE} E-series at {lat}, {lon} created")
 
     # Export E seires
     E.to_csv(os.path.join(PROCESSED_DATA_DIR, f"E_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv"))
@@ -421,29 +449,8 @@ def perform_analysis():
     plt.xlabel("Lag")
     plt.ylabel("p-value")
     plt.title("Ljung-Box Test for $E$")
-    plt.savefig(os.path.join(FIGS_DIR, f"lb_test_E_{filename}.png"))
+    plt.savefig(os.path.join(FIGS_DIR_E, f"lb_test_E_{filename}.png"))
     print(f"Ljung-Box test plot for {VARIABLE} E-series at {lat}, {lon} created")
-
-    # fitting the time series W_max_daily data to a GPD model with the chosen threshold u0
-    u0_r = FloatVector([u0])
-    thresh_modeling.gpdfit(W_max_daily, u0_r[0], "mle")
-
-    # model checking (empirical versus model): plotting quantile-quantile, probability-probability and cumulative-cumulative 
-    # functions with the chosen threshold u0 and with a confidence level of 5%
-    plt.close("all")
-    fig_qq = thresh_modeling.qqplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
-    fig_qq.savefig(os.path.join(FIGS_DIR, f"qqplot_W_max_daily_{filename}.png"))
-    print(f"qqplot for {VARIABLE} at {lat}, {lon} created")
-
-    plt.close("all")
-    fig_pp = thresh_modeling.ppplot(np.ravel(W_max_daily["maximum daily normalized deviation"]), u0_r[0], "mle", 0.05)
-    fig_pp.savefig(os.path.join(FIGS_DIR, f"ppplot_W_max_daily_{filename}.png"))
-    print(f"ppplot for {VARIABLE} at {lat}, {lon} created")
-
-    plt.close("all")
-    fig_cdf = thresh_modeling.gpdcdf(W_max_daily["maximum daily normalized deviation"], u0_r[0], "mle", 0.05)
-    fig_cdf.savefig(os.path.join(FIGS_DIR, f"gpdcdf_W_max_daily_{filename}.png"))
-    print(f"gpdcdf for {VARIABLE} at {lat}, {lon} created")
 
 if __name__ == '__main__':
     perform_analysis()
