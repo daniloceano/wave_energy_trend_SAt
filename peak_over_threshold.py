@@ -6,17 +6,17 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 14:38:10 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 19:46:11 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-
 import pandas as pd
-import pymannkendall as mk
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn import linear_model
 from scipy.stats import genpareto
-import matplotlib.pyplot as plt
-import numpy as np
+import pymannkendall as mk
+from statsmodels.stats.diagnostic import acorr_ljungbox
 import os
 import sys
 
@@ -27,6 +27,8 @@ PROCESSED_DATA_DIR = f"./processed_data_{VARIABLE}/"
 GRAY = '#343a40'
 RED = '#bf0603'
 BLUE = '#0077b6'
+GREEN = '#28a745'
+ORANGE = '#ffc107'
 ALPHA = 0.05
 POINT_LAT = -24.12
 POINT_LON = -45.71
