@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 20:43:50 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 20:48:28 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -96,7 +96,7 @@ def main():
     # Create a new Series by selecting values from 'X' at the indices where 'E' has data
     X_e = X.loc[E.index]['swh']
     # Rename the series for clarity
-    X_e.rename("extreme maximum temperatures", inplace=True)
+    X_e.rename(f"extreme maximum {VARIABLE}", inplace=True)
     print(f"From {X.index[0].date()} to {X.index[-1].date()} at {POINT_LAT}, {POINT_LON}, there are {len(X_e)} extreme maximum values of {VARIABLE}")
     csv_filename = os.path.join(PROCESSED_DATA_DIR, f"XE_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv")
     X_e.to_csv(csv_filename)
@@ -164,7 +164,7 @@ def main():
         plt.text(x=months[m-1]-0.08, y=countd_months[m-1]+0.5, s = countd_months[m-1], size = 12)
     plt.xlabel("Month")
     plt.ylabel("Count")
-    plt.title("Number of Extreme Maximum Daily Temperatures by Month from 1980-12-31 to 2019-12-31")
+    plt.title(f"Number of Extreme Maximum Daily {VARIABLE} by Month from {X.index[0].date()} to {X.index[-1].date()}")
     barplot_filename = os.path.join(FIGS_DIR, f"barplot_countd_months_{filename}.png")
     plt.savefig(barplot_filename)
     print(f"Barplot for count of exceedances (E) for {VARIABLE} at {lat}, {lon} saved to {barplot_filename}")
@@ -189,7 +189,7 @@ def main():
     plt.xticks(range(len(season_order)), season_order)
     plt.xlabel("Season")
     plt.ylabel("Count")
-    plt.title("Number of Extreme Maximum Daily Temperatures by Season from 1980-12-31 to 2019-12-31")
+    plt.title(f"Number of Extreme Maximum Daily {VARIABLE} by Season from {X.index[0].date()} to {X.index[-1].date()}")
     barplot_filename = os.path.join(FIGS_DIR, f"barplot_countd_seasons_{filename}.png")
     plt.savefig(barplot_filename)
     print(f"Barplot for count of exceedances (E) for {VARIABLE} at {lat}, {lon} saved to {barplot_filename}")
