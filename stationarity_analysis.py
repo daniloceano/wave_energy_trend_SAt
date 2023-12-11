@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 16:56:42 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 13:36:06 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 17:26:18 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -226,7 +226,7 @@ def main():
     lon_str = f"{np.abs(lon)}W" if lon < 0 else f"{lon}E"
     W = load_time_series(VARIABLE, lat_str, lon_str, START_YEAR, END_YEAR)
     
-    filename = f"{VARIABLE.upper()}_{lat_str}_{lon_str}"
+    filename = f"W_{VARIABLE.upper()}_{lat_str}_{lon_str}"
     create_lag_plots(W, VARIABLE, filename)
     print(f"lag plots for {VARIABLE} at {lat_str}, {lon_str} created")
     
@@ -240,7 +240,7 @@ def main():
     create_hourly_boxplots(W, VARIABLE, filename)
     print(f"hourly boxplots for deseasonalized (W) {VARIABLE} at {lat}, {lon} created")
     
-    output_file = os.path.join(PROCESSED_DATA_DIR, f"adf_stationarity_W_{filename}.txt")
+    output_file = os.path.join(PROCESSED_DATA_DIR, f"adf_stationarity_{filename}.txt")
     analyze_stationarity(W, VARIABLE, output_file)
     print(f"stationarity analysis results for deseasonalized (W) {VARIABLE} at {lat}, {lon} saved to {output_file}")
     
