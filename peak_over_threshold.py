@@ -1,15 +1,24 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    peak_over_threshold.py                             :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
+#    Updated: 2023/12/11 14:32:58 by daniloceano      ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+
 import pandas as pd
 import pymannkendall as mk
 from sklearn import linear_model
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import r2_score
 from scipy.stats import genpareto
 import matplotlib.pyplot as plt
-import numpy as np 
-import pandas as pd 
+import numpy as np
 import os
 import sys
-from glob import glob 
 
 # Constants
 VARIABLE = "swh"
@@ -24,111 +33,151 @@ POINT_LON = -45.71
 START_YEAR = "1980"
 END_YEAR = "2022"
 
+# Ensure directories exist
 os.makedirs(FIGS_DIR, exist_ok=True)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 
-def load_E_time_series(variable, lat_str, lon_str, start_year, end_year):
+def load_time_series(filename):
     """
-    Loads the time series data for a given variable from a CSV file.
-
-    This function searches for a specific CSV file in the processed data directory, reads it,
-    and returns the time-indexed data.
+    Load time series data from a CSV file.
 
     Args:
-        variable (str): The variable name used to identify the relevant CSV file.
+        filename (str): Path to the CSV file.
 
     Returns:
-        pandas.DataFrame: A DataFrame containing the loaded time series data with a datetime index.
+        pandas.DataFrame: Loaded time series data.
     """
-    data_file = glob(os.path.join(PROCESSED_DATA_DIR, f"E_{variable}_{lat_str}_{lon_str}_{start_year}-{end_year}.csv"))[0]
-    data = pd.read_csv(data_file, index_col=0)
-    data.index = pd.to_datetime(data.index)
-    return data
+    try:
+        data = pd.read_csv(filename, index_col=0)
+        data.index = pd.to_datetime(data.index)
+        return data
+    except FileNotFoundError:
+        print(f"File not found: {filename}")
+        sys.exit(1)
 
-def read_u0_from_file(variable, lat_str, lon_str, start_year, end_year):
+def read_u0_from_file(filename):
     """
     Reads the threshold value u0 from a text file.
 
     Args:
-        variable (str): The variable name used to identify the relevant text file.
-        lat_str (str): Latitude string for file identification.
-        lon_str (str): Longitude string for file identification.
-        start_year (str): Start year for file identification.
-        end_year (str): End year for file identification.
+        filename (str): Path to the text file.
 
     Returns:
-        float: The value of u0 read from the file.
+        float: The value of u0.
     """
-    u0_filename = os.path.join(PROCESSED_DATA_DIR, f"u0_{variable}_{lat_str}_{lon_str}_{start_year}-{end_year}.txt")
     try:
-        with open(u0_filename, 'r') as file:
+        with open(filename, 'r') as file:
             line = file.readline()
-            u0_value = float(line.split(":")[1].strip())
-        return u0_value
+            return float(line.split(":")[1].strip())
     except FileNotFoundError:
-        print(f"File not found: {u0_filename}")
-        return None
+        print(f"File not found: {filename}")
+        sys.exit(1)
     except ValueError:
         print("Error in reading the u0 value from the file.")
-        return None
+        sys.exit(1)
 
-# Import excess data
-lat, lon = np.round(float(POINT_LAT), 2), np.round(float(POINT_LON), 2)
-lat_str = f"{np.abs(lat)}S" if lat < 0 else f"{lat}N"
-lon_str = f"{np.abs(lon)}W" if lon < 0 else f"{lon}E"
-E = load_E_time_series(VARIABLE, lat_str, lon_str, START_YEAR, END_YEAR)
-filename = f"E_{VARIABLE}_{lat_str}_{lon_str}"
+def plot_histogram(data, filename, u0):
+    """
+    Plot and save a histogram of the data with a fitted GPD.
 
-# Read u0 from file
-u0 = read_u0_from_file(VARIABLE, lat_str, lon_str, START_YEAR, END_YEAR)
-if u0 is not None:
-    print(f"Read threshold u0: {u0}")
-else:
-    print("Failed to read threshold u0 from file.")
-    sys.exit(1)
+    Args:
+        data (pandas.DataFrame): Data to plot.
+        filename (str): Path to save the plot.
+        u0 (float): Threshold value u0.
+    """
+    c, loc, scale = genpareto.fit(data - u0)
+    xsi, sigma = c, scale
+    min_excess, max_excess = data.min(), data.max()
 
-# plotting the normalized histogram for exceedances over the threshold series and the GPD probability density function
-c, loc, scale = genpareto.fit(E - u0)  # Fit the GPD to the exceedances data
-xsi, sigma = c, scale # GPD parameters
-min_excess, max_excess = E.min(), E.max() # Minimum and maximum exceedances
-plt.figure(figsize=(16, 8))
-plt.hist(E, bins=40, density=True, color=GRAY)
-plt.xlabel("Excesses")
-plt.title("Histogram for Exceedances Over the Threshold Series $E$ and The Adjusted GPD Probability Density Function")
-x_fit = np.linspace(min_excess, max_excess, 500)  # Adjust the number of points as needed
-h_fit = (1/sigma) * (1 + xsi * ((x_fit)/sigma))**(-1-1/xsi)  # h(x_fit) = h_fit
-plt.plot(x_fit , h_fit, color="red", label="GPD Probability Density Function")
-plt.legend(loc="best")
-plt.savefig(os.path.join(FIGS_DIR, f"histogram_E_{filename}.png"))
-print(f"Histogram for exceedances (E) {VARIABLE} at {lat}, {lon} created")
+    plt.figure(figsize=(16, 8))
+    plt.hist(data, bins=40, density=True, color=GRAY)
+    plt.xlabel("Excesses")
+    plt.title("Histogram for Exceedances Over the Threshold Series $E$ and The Adjusted GPD Probability Density Function")
+    
+    x_fit = np.linspace(min_excess, max_excess, 500)
+    h_fit = (1/sigma) * (1 + xsi * ((x_fit)/sigma))**(-1-1/xsi)
+    plt.plot(x_fit, h_fit, color="red", label="GPD Probability Density Function")
+    plt.legend(loc="best")
+    plt.savefig(filename)
+    plt.close()
 
-# Apply Mann-Kendall Test to check if the intensities have some linear trend.
-print("Results of Mann-Kendall Trend Test\n")
-mk_test = mk.original_test(E.values, alpha=0.05)
-mk_output = pd.Series([mk_test[0], mk_test[2]], index=["trend:", "p-value:"])
-print(mk_output)
-output_file = os.path.join(PROCESSED_DATA_DIR, f"kendall-test_{filename}.txt")
-with open(output_file, 'w') as file:
-    file.write(mk_output.to_string())
-print(f"Mann-Kendall test results saved to {output_file}")
+def perform_mann_kendall_test(data, filename):
+    """
+    Perform Mann-Kendall test and save the results.
 
-# Plotting the exceedances over the threshold series and the linear trend function
-plt.close("all")
-plt.figure(figsize=(16, 8))
-st1 = plt.stem(E.index, E.values)
-plt.setp(st1[0], color=RED, marker="o", markersize=2)
-plt.setp(st1[1], color=GRAY, linestyle="-")
-plt.setp(st1[2], visible=False)
-plt.xlabel("Date")
-plt.ylabel("Excesses")
-plt.title("Exceedances Over the Threshold Series $E$ and the Linear Trend Function")
-x = (E.index - E.index[0]).days.values.reshape(-1, 1)
-y = E.values
-model = linear_model.LinearRegression().fit(x, y)
-y_fit = model.predict(x)
-print("Results of the Linear Regression\n")
-lm_output = pd.Series([model.coef_, model.intercept_, mean_squared_error(y, y_fit), r2_score(y, y_fit)], index = ["slope:", "intercept:", "mean squared error:", "r2 score:"])
-print(lm_output)
-plt.plot(E.index, y_fit, color=RED, label="Line $y = $" + str(float(model.coef_)) + " $x +$" + str(model.intercept_))
-plt.legend(loc = "best")
-plt.savefig(os.path.join(FIGS_DIR, f"trend_E_{filename}.png"))
-print(f"Trend for exceedances (E) {VARIABLE} at {lat}, {lon} created")
+    Args:
+        data (pandas.DataFrame): Data to test.
+        filename (str): Path to save the test results.
+    """
+    mk_test = mk.original_test(data.values, alpha=0.05)
+    mk_output = pd.Series([mk_test[0], mk_test[2]], index=["trend:", "p-value:"])
+    with open(filename, 'w') as file:
+        file.write(mk_output.to_string())
+
+def plot_linear_trend(data, filename):
+    """
+    Plot and save the linear trend of the data.
+
+    Args:
+        data (pandas.DataFrame): Data to plot.
+        filename (str): Path to save the plot.
+    """
+    plt.figure(figsize=(16, 8))
+    st1 = plt.stem(data.index, data.values)
+    plt.setp(st1[0], color=RED, marker="o", markersize=2)
+    plt.setp(st1[1], color=GRAY, linestyle="-")
+    plt.setp(st1[2], visible=False)
+    plt.xlabel("Date")
+    plt.ylabel("Excesses")
+    plt.title("Exceedances Over the Threshold Series $E$ and the Linear Trend Function")
+
+    days_since_start = (data.index - data.index[0]).days.values.reshape(-1, 1)
+    model = linear_model.LinearRegression().fit(days_since_start, data.values)
+    y_fit = model.predict(days_since_start)
+
+    # Extract the first (and only) coefficient from the model.coef_ array
+    # Ensure that it is a scalar
+    slope = model.coef_.item() if isinstance(model.coef_, np.ndarray) else model.coef_
+
+    intercept = model.intercept_.item() if isinstance(model.intercept_, np.ndarray) else model.intercept_
+
+    plt.plot(data.index, y_fit, color=RED, label=f"Line $y = {slope:.2f} x + {intercept:.2f}$")
+    plt.legend(loc="best")
+    plt.savefig(filename)
+    plt.close()
+
+def main():
+    # Define file paths
+    lat, lon = np.round(float(POINT_LAT), 2), np.round(float(POINT_LON), 2)
+    lat_str = f"{np.abs(lat)}S" if lat < 0 else f"{lat}N"
+    lon_str = f"{np.abs(lon)}W" if lon < 0 else f"{lon}E"
+    filename = f"E_{VARIABLE}_{lat_str}_{lon_str}"
+
+    # Load data
+    data_file = os.path.join(PROCESSED_DATA_DIR, f"E_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.csv")
+    E = load_time_series(data_file)
+
+    # Read u0 from file
+    u0_file = os.path.join(PROCESSED_DATA_DIR, f"u0_{VARIABLE}_{lat_str}_{lon_str}_{START_YEAR}-{END_YEAR}.txt")
+    u0 = read_u0_from_file(u0_file)
+    if u0 is None:
+        print("Failed to read threshold u0 from file.")
+        return
+
+    # Plot histogram
+    histogram_file = os.path.join(FIGS_DIR, f"histogram_{filename}.png")
+    plot_histogram(E, histogram_file, u0)
+    print(f"Histogram for exceedances (E) of {VARIABLE} at {lat}, {lon} saved to {histogram_file}")
+
+    # Perform Mann-Kendall Test
+    mk_test_file = os.path.join(PROCESSED_DATA_DIR, f"kendall-test_{filename}.txt")
+    perform_mann_kendall_test(E, mk_test_file)
+    print(f"Mann-Kendall Test for exceedances (E) of {VARIABLE} at {lat}, {lon} saved to {mk_test_file}")
+
+    # Plot linear trend
+    trend_file = os.path.join(FIGS_DIR, f"trend_{filename}.png")
+    plot_linear_trend(E, trend_file)
+    print(f"Linear trend for exceedances (E) of {VARIABLE} at {lat}, {lon} saved to {trend_file}")
+
+if __name__ == "__main__":
+    main()
