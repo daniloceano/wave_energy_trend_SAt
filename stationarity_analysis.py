@@ -6,7 +6,7 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/08 16:56:42 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 10:03:13 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/11 13:36:06 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,9 +30,9 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from pandas.plotting import lag_plot
 
 # Constants
-FIGS_DIR = "./figures/"
-PROCESSED_DATA_DIR = "./processed_data/"
 VARIABLE = "swh"
+FIGS_DIR = "./figures/W_swh/"
+PROCESSED_DATA_DIR = f"./processed_data_{VARIABLE}/"
 GRAY = '#343a40'
 RED = '#bf0603'
 BLUE = '#0077b6'
@@ -232,20 +232,20 @@ def main():
     
     lag_values = [24, 48, 72, 96]
     create_lag_plots_with_lags(W, VARIABLE, lag_values, filename)
-    print(f"{lag_values} lag plots for {VARIABLE} at {lat}, {lon} created")
+    print(f"{lag_values} lag plots for deseasonalized (W) {VARIABLE} at {lat}, {lon} created")
     
     plot_autocorrelation(W, VARIABLE, filename)
-    print(f"autocorrelation plot for {VARIABLE} at {lat_str}, {lon_str} created")
+    print(f"autocorrelation plot for deseasonalized (W) {VARIABLE} at {lat_str}, {lon_str} created")
     
     create_hourly_boxplots(W, VARIABLE, filename)
-    print(f"hourly boxplots for {VARIABLE} at {lat}, {lon} created")
+    print(f"hourly boxplots for deseasonalized (W) {VARIABLE} at {lat}, {lon} created")
     
-    output_file = os.path.join(PROCESSED_DATA_DIR, f"analysis_results_stationarity_{filename}.txt")
+    output_file = os.path.join(PROCESSED_DATA_DIR, f"adf_stationarity_W_{filename}.txt")
     analyze_stationarity(W, VARIABLE, output_file)
-    print(f"stationarity analysis results for {VARIABLE} at {lat}, {lon} saved to {output_file}")
+    print(f"stationarity analysis results for deseasonalized (W) {VARIABLE} at {lat}, {lon} saved to {output_file}")
     
     perform_ljung_box_test(W, VARIABLE, filename)
-    print(f"Ljung-Box test results for {VARIABLE} at {lat}, {lon} saved to {output_file}")
+    print(f"Ljung-Box test results for deseasonalized (W) {VARIABLE} at {lat}, {lon} saved to {output_file}")
 
 if __name__ == "__main__":
     main()
