@@ -6,9 +6,15 @@
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 20:48:28 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/12 08:16:20 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
+
+"""
+The 'e_explore_E.py' module is part of the South Atlantic waves trend analysis project. 
+It focuses on examining time series data for extreme events using Extreme Value Theory (EVT). 
+The module analyzes how often these events happen, when they occur, and their patterns over time.
+"""
 
 import pandas as pd
 import numpy as np

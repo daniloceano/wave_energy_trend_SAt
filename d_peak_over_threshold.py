@@ -1,14 +1,22 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    peak_over_threshold.py                             :+:      :+:    :+:    #
+#    d_peak_over_threshold.py                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: daniloceano <danilo.oceano@gmail.com>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/12/11 14:32:51 by daniloceano       #+#    #+#              #
-#    Updated: 2023/12/11 19:46:51 by daniloceano      ###   ########.fr        #
+#    Updated: 2023/12/12 08:06:43 by daniloceano      ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
+
+"""
+This module, 'peak_over_threshold.py', is part of the South Atlantic waves trend analysis project, 
+focusing on the application of Extreme Value Theory (EVT) in environmental and climate data analysis. 
+Specifically, it implements the Peak Over Threshold (POT) method, utilizing the Generalized Pareto Distribution (GPD) 
+to model and analyze exceedances over a predefined threshold.
+"""
+
 
 import pandas as pd
 import numpy as np
